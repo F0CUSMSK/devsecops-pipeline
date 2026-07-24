@@ -1,0 +1,105 @@
+
+
+name: DevSecOps Security Pipeline
+
+# run this pipeline on every push to any branch
+on:
+  push:
+    branches:
+      - main
+      - vulnerable
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  # ─────────────────────────────────────────────
+  # JOB 1 — Checkov scans Terraform files
+  # ─────────────────────────────────────────────
+  checkov-scan:
+    name: Checkov Terraform Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout my code
+        uses: actions/checkout@v4
+
+      - name: run checkov scanner
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: cli,junit
+          output_file_path: reports/
+          soft_fail: true
+
+      - name: upload checkov report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkov-report
+          path: reports/
+
+  # ─────────────────────────────────────────────
+  # JOB 2 — Tfsec scans Terraform files
+  # ─────────────────────────────────────────────
+  tfsec-scan:
+    name: Tfsec Terraform Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout my code
+        uses: actions/checkout@v4
+
+      - name: run tfsec scanner
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: terraform/
+          soft_fail: true
+
+  # ─────────────────────────────────────────────
+  # JOB 3 — Gitleaks scans for secrets
+  # ─────────────────────────────────────────────
+  gitleaks-scan:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout my code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: run gitleaks scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────────
+  # JOB 4 — Ansible-Lint scans playbooks
+  # ─────────────────────────────────────────────
+  ansible-lint:
+    name: Ansible-Lint Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout my code
+        uses: actions/checkout@v4
+
+      - name: install ansible-lint
+        run: |
+          pip install ansible-lint
+          pip install ansible
+
+      - name: run ansible-lint scanner
+        run: |
+          ansible-lint ansible/playbook.yml -v
+        continue-on-error: true
+
+      - name: upload ansible-lint report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ansible-lint-report
+          path: reports/

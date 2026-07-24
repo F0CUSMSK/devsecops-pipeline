@@ -1,0 +1,74 @@
+- name: deploy and configure web server
+  hosts: webservers
+  become: yes
+  become_method: sudo
+
+  vars:
+    # BAD PRACTICE: hardcoded credentials in plaintext
+    # gitleaks and ansible-lint will catch these
+    db_password: "DatabasePass123!"
+    db_user: "admin"
+    api_key: "sk-1234567890abcdef"
+    secret_token: "my-super-secret-token"
+    app_port: 80
+
+  tasks:
+
+    # first thing i do is update the server
+    - name: update apt cache
+      apt:
+        update_cache: yes
+
+    # install nginx web server
+    - name: install nginx
+      apt:
+        name: nginx
+        state: present
+
+    # install mysql database
+    - name: install mysql
+      apt:
+        name: mysql-server
+        state: present
+
+    # BAD PRACTICE: using command module instead of mysql_user module
+    # ansible-lint will catch this
+    - name: configure database user
+      command: mysql -u root -e "CREATE USER '{{ db_user }}'@'localhost' IDENTIFIED BY '{{ db_password }}';"
+
+    # BAD PRACTICE: file permissions set to 0777 which means everyone can read write execute
+    # ansible-lint will catch this
+    - name: create app config file
+      copy:
+        content: |
+          DB_PASSWORD={{ db_password }}
+          DB_USER={{ db_user }}
+          API_KEY={{ api_key }}
+          SECRET={{ secret_token }}
+          PORT={{ app_port }}
+        dest: /etc/app/config.env
+        # this is very dangerous, every user on the system can read this file
+        mode: "0777"
+
+    # start nginx and make it run on boot
+    - name: start nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    # BAD PRACTICE: no version pinning for pip packages
+    # ansible-lint will catch this
+    - name: install python packages
+      pip:
+        name: flask
+
+    # BAD PRACTICE: using shell module when a proper module exists
+    # ansible-lint will catch this
+    - name: create app directory
+      shell: mkdir -p /var/www/myapp && chmod 777 /var/www/myapp
+
+    # BAD PRACTICE: ignore errors which hides real problems
+    - name: check app status
+      command: systemctl status myapp
+      ignore_errors: yes

@@ -1,0 +1,43 @@
+
+# ─── Terraform ────────────────────────────────────────────────
+# terraform state files contain real infrastructure details
+# never push these to github
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+crash.log
+override.tf
+override.tf.json
+
+# ─── Ansible ──────────────────────────────────────────────────
+# retry files created when ansible fails
+*.retry
+
+# ─── SSH Keys ─────────────────────────────────────────────────
+# private keys should never be in github
+*.pem
+*.key
+*.rsa
+id_rsa
+id_rsa.pub
+
+# ─── Secrets ──────────────────────────────────────────────────
+# environment files with passwords and api keys
+.env
+.env.local
+.env.production
+vault-token
+secrets.yml
+credentials.json
+
+# ─── OS Files ─────────────────────────────────────────────────
+# windows and mac system files
+.DS_Store
+Thumbs.db
+
+# ─── Editor ───────────────────────────────────────────────────
+# vs code settings
+.vscode/
+*.swp
+*.swo
