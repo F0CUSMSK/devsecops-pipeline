@@ -13,7 +13,6 @@ on:
       - main
 
 jobs:
-
   # ─────────────────────────────────────────────
   # JOB 1 — Checkov scans Terraform files
   # ─────────────────────────────────────────────
@@ -40,13 +39,9 @@ jobs:
         with:
           name: checkov-report
           path: reports/
-
   # ─────────────────────────────────────────────
   # JOB 2 — Tfsec scans Terraform files
   # ─────────────────────────────────────────────
-  # ─────────────────────────────────────────────
-# JOB 2 — Tfsec scans Terraform files
-# ─────────────────────────────────────────────
   tfsec-scan:
     name: Tfsec Terraform Scan
     runs-on: ubuntu-latest
@@ -63,7 +58,7 @@ jobs:
 
       - name: run tfsec scanner
         run: |
-         tfsec terraform/ --format default
+          tfsec terraform/ --format default
 
   # ─────────────────────────────────────────────
   # JOB 3 — Gitleaks scans for secrets
@@ -78,10 +73,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: install gitleaks
+        run: |
+          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz
+          tar -xzf gitleaks_8.24.3_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
+
       - name: run gitleaks scanner
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gitleaks detect --source . -v
 
   # ─────────────────────────────────────────────
   # JOB 4 — Ansible-Lint scans playbooks
@@ -102,7 +102,6 @@ jobs:
       - name: run ansible-lint scanner
         run: |
           ansible-lint ansible/playbook.yml -v
-        
 
       - name: upload ansible-lint report
         uses: actions/upload-artifact@v4
