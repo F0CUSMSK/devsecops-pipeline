@@ -56,7 +56,7 @@ jobs:
         uses: aquasecurity/tfsec-action@v1.0.0
         with:
           working_directory: terraform/
-          soft_fail: true
+          soft_fail: false
 
   # ─────────────────────────────────────────────
   # JOB 3 — Gitleaks scans for secrets
@@ -95,7 +95,7 @@ jobs:
       - name: run ansible-lint scanner
         run: |
           ansible-lint ansible/playbook.yml -v
-        continue-on-error: true
+        
 
       - name: upload ansible-lint report
         uses: actions/upload-artifact@v4
