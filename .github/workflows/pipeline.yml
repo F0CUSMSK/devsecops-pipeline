@@ -44,6 +44,9 @@ jobs:
   # ─────────────────────────────────────────────
   # JOB 2 — Tfsec scans Terraform files
   # ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────
+# JOB 2 — Tfsec scans Terraform files
+# ─────────────────────────────────────────────
   tfsec-scan:
     name: Tfsec Terraform Scan
     runs-on: ubuntu-latest
@@ -52,11 +55,15 @@ jobs:
       - name: checkout my code
         uses: actions/checkout@v4
 
+      - name: install tfsec
+        run: |
+          wget -q https://github.com/aquasecurity/tfsec/releases/download/v1.28.14/tfsec-linux-amd64 -O tfsec
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/tfsec
+
       - name: run tfsec scanner
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          working_directory: terraform/
-          soft_fail: false
+        run: |
+         tfsec terraform/ --format default
 
   # ─────────────────────────────────────────────
   # JOB 3 — Gitleaks scans for secrets
