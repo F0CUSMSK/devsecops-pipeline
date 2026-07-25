@@ -30,7 +30,7 @@ jobs:
         with:
           directory: .
           framework: terraform
-          output_format: cli,json,junit
+          output_format: cli,json,junitxml
           output_file_path: reports/
           soft_fail: true
 
