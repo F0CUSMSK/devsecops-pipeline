@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="DevSecOps Security Dashboard — Shift-Left Static Code Analysis Pipeline. Automated security scan results." />
+  <title>Security Dashboard — {project_name}</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%233b82f6'/><path d='M8 3l4 2.5v5L8 13l-4-2.5v-5L8 3z' fill='white' opacity='0.9'/></svg>" />
+</head>
+<body>
+
+  <div class="dashboard">
+
+    <!-- ======== TOP BAR ======== -->
+    <nav class="topbar" aria-label="Dashboard navigation">
+      <div class="topbar__left">
+        <div class="topbar__logo">
+          <svg class="icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 1.5L13.5 4.5V11.5L8 14.5L2.5 11.5V4.5L8 1.5Z" stroke="white" stroke-width="1.5" fill="none"/>
+            <path d="M8 5.5L10.5 7V10L8 11.5L5.5 10V7L8 5.5Z" fill="white" opacity="0.6"/>
+          </svg>
+        </div>
+        <span class="topbar__name">{project_name}</span>
+        <span class="topbar__divider"></span>
+        <span class="topbar__page">Security Overview</span>
+      </div>
+      <div class="topbar__right">
+        <span class="topbar__meta">
+          <svg class="icon--sm" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.5V8.5L10.5 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          {last_scan_timestamp}
+        </span>
+        <span class="topbar__meta">
+          <svg class="icon--sm" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="5.5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 14.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          {author}
+        </span>
+        <span class="topbar__status">
+          <span class="topbar__status-dot"></span>
+          Pipeline Complete
+        </span>
+      </div>
+    </nav>
+
+    <!-- ======== PAGE HEADER ======== -->
+    <header class="page-header">
+      <h1 class="page-header__title">Security Overview</h1>
+      <p class="page-header__desc">Aggregated findings from Checkov, Tfsec, Gitleaks, and Ansible-Lint across the infrastructure codebase.</p>
+    </header>
+
+    <!-- ======== STAT CARDS ======== -->
+    <section class="stats-row" aria-label="Findings summary">
+
+      <div class="stat-card stat-card--total" id="stat-total">
+        <div class="stat-card__header">
+          <span class="stat-card__label">Total Findings</span>
+          <span class="stat-card__icon-wrap stat-card__icon-wrap--total">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M2 12.5L5.5 7L8.5 10L14 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+        <div class="stat-card__value stat-card__value--total" data-counter="{total_findings}">{total_findings}</div>
+        <div class="severity-bar" id="severity-bar">
+          <div class="severity-bar__segment severity-bar__segment--critical" data-flex="{total_critical}" style="flex:0"></div>
+          <div class="severity-bar__segment severity-bar__segment--high" data-flex="{total_high}" style="flex:0"></div>
+          <div class="severity-bar__segment severity-bar__segment--medium" data-flex="{total_medium}" style="flex:0"></div>
+          <div class="severity-bar__segment severity-bar__segment--low" data-flex="{total_low}" style="flex:0"></div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--critical" id="stat-critical">
+        <div class="stat-card__header">
+          <span class="stat-card__label">Critical</span>
+          <span class="stat-card__icon-wrap stat-card__icon-wrap--critical">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M8 2L14.5 13H1.5L8 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.5V9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.5" fill="currentColor"/></svg>
+          </span>
+        </div>
+        <div class="stat-card__value stat-card__value--critical" data-counter="{total_critical}">{total_critical}</div>
+        <div class="stat-card__pct" data-pct-of="{total_critical}"></div>
+      </div>
+
+      <div class="stat-card stat-card--high" id="stat-high">
+        <div class="stat-card__header">
+          <span class="stat-card__label">High</span>
+          <span class="stat-card__icon-wrap stat-card__icon-wrap--high">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M8 3V10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.5 6.5L8 3L11.5 6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="stat-card__value stat-card__value--high" data-counter="{total_high}">{total_high}</div>
+        <div class="stat-card__pct" data-pct-of="{total_high}"></div>
+      </div>
+
+      <div class="stat-card stat-card--medium" id="stat-medium">
+        <div class="stat-card__header">
+          <span class="stat-card__label">Medium</span>
+          <span class="stat-card__icon-wrap stat-card__icon-wrap--medium">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M3 8h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5 5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="stat-card__value stat-card__value--medium" data-counter="{total_medium}">{total_medium}</div>
+        <div class="stat-card__pct" data-pct-of="{total_medium}"></div>
+      </div>
+
+      <div class="stat-card stat-card--low" id="stat-low">
+        <div class="stat-card__header">
+          <span class="stat-card__label">Low</span>
+          <span class="stat-card__icon-wrap stat-card__icon-wrap--low">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M8 13V6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.5 9.5L8 13L11.5 9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="stat-card__value stat-card__value--low" data-counter="{total_low}">{total_low}</div>
+        <div class="stat-card__pct" data-pct-of="{total_low}"></div>
+      </div>
+
+    </section>
+
+    <!-- ======== MIDDLE ROW: SCANNERS + DONUT ======== -->
+    <section class="middle-row" aria-label="Scanner details">
+
+      <!-- Scanner Status Panel -->
+      <div class="panel" id="panel-scanners">
+        <div class="panel__head">
+          <h2 class="panel__title">
+            <svg class="icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Scanner Status
+          </h2>
+        </div>
+        <div class="panel__body">
+          <div class="scanner-list">
+
+            <div class="scanner-item" id="scanner-checkov">
+              <span class="scanner-item__indicator scanner-item__indicator--{checkov_status}"></span>
+              <span class="scanner-item__name">Checkov</span>
+              <span class="scanner-item__tag scanner-item__tag--{checkov_status}">{checkov_status_text}</span>
+              <span class="scanner-item__count">{checkov_count}</span>
+            </div>
+
+            <div class="scanner-item" id="scanner-tfsec">
+              <span class="scanner-item__indicator scanner-item__indicator--{tfsec_status}"></span>
+              <span class="scanner-item__name">Tfsec</span>
+              <span class="scanner-item__tag scanner-item__tag--{tfsec_status}">{tfsec_status_text}</span>
+              <span class="scanner-item__count">{tfsec_count}</span>
+            </div>
+
+            <div class="scanner-item" id="scanner-gitleaks">
+              <span class="scanner-item__indicator scanner-item__indicator--{gitleaks_status}"></span>
+              <span class="scanner-item__name">Gitleaks</span>
+              <span class="scanner-item__tag scanner-item__tag--{gitleaks_status}">{gitleaks_status_text}</span>
+              <span class="scanner-item__count">{gitleaks_count}</span>
+            </div>
+
+            <div class="scanner-item" id="scanner-ansible-lint">
+              <span class="scanner-item__indicator scanner-item__indicator--{ansible_lint_status}"></span>
+              <span class="scanner-item__name">Ansible-Lint</span>
+              <span class="scanner-item__tag scanner-item__tag--{ansible_lint_status}">{ansible_lint_status_text}</span>
+              <span class="scanner-item__count">{ansible_lint_count}</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Severity Distribution Donut -->
+      <div class="panel" id="panel-distribution">
+        <div class="panel__head">
+          <h2 class="panel__title">
+            <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M8 2a6 6 0 0 1 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Severity Distribution
+          </h2>
+        </div>
+        <div class="panel__body">
+          <div class="donut-container">
+            <div class="donut-chart" id="donut-chart" data-critical="{total_critical}" data-high="{total_high}" data-medium="{total_medium}" data-low="{total_low}">
+              <svg viewBox="0 0 128 128">
+                <circle class="donut-chart__bg" cx="64" cy="64" r="55" stroke-width="18"/>
+                <circle class="donut-seg--critical" cx="64" cy="64" r="55" stroke-width="18"/>
+                <circle class="donut-seg--high"     cx="64" cy="64" r="55" stroke-width="18"/>
+                <circle class="donut-seg--medium"   cx="64" cy="64" r="55" stroke-width="18"/>
+                <circle class="donut-seg--low"       cx="64" cy="64" r="55" stroke-width="18"/>
+              </svg>
+              <div class="donut-chart__center">
+                <span class="donut-chart__center-value" data-counter="{total_findings}">{total_findings}</span>
+                <span class="donut-chart__center-label">Total</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="donut-legend__item">
+                <span class="donut-legend__color donut-legend__color--critical"></span>
+                <span class="donut-legend__text">Critical</span>
+                <span class="donut-legend__value">{total_critical}</span>
+                <span class="donut-legend__pct">—</span>
+              </div>
+              <div class="donut-legend__item">
+                <span class="donut-legend__color donut-legend__color--high"></span>
+                <span class="donut-legend__text">High</span>
+                <span class="donut-legend__value">{total_high}</span>
+                <span class="donut-legend__pct">—</span>
+              </div>
+              <div class="donut-legend__item">
+                <span class="donut-legend__color donut-legend__color--medium"></span>
+                <span class="donut-legend__text">Medium</span>
+                <span class="donut-legend__value">{total_medium}</span>
+                <span class="donut-legend__pct">—</span>
+              </div>
+              <div class="donut-legend__item">
+                <span class="donut-legend__color donut-legend__color--low"></span>
+                <span class="donut-legend__text">Low</span>
+                <span class="donut-legend__value">{total_low}</span>
+                <span class="donut-legend__pct">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======== FINDINGS: CHECKOV ======== -->
+    <div class="findings-panel" id="findings-checkov" aria-label="Checkov findings">
+      <div class="findings-panel__head">
+        <h3 class="findings-panel__title">
+          <span class="findings-panel__title-icon">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 8l2 2 3.5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          Checkov · Terraform Misconfigurations
+        </h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="findings-panel__badge">{checkov_count}</span>
+          <svg class="icon--sm findings-panel__chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="findings-panel__body">
+        <table class="findings-table" id="table-checkov">
+          <thead>
+            <tr>
+              <th style="width:28%">File</th>
+              <th style="width:15%">Rule ID</th>
+              <th>Description</th>
+              <th style="width:10%">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {checkov_rows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== FINDINGS: TFSEC ======== -->
+    <div class="findings-panel" id="findings-tfsec" aria-label="Tfsec findings">
+      <div class="findings-panel__head">
+        <h3 class="findings-panel__title">
+          <span class="findings-panel__title-icon">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L13.5 4.5V11.5L8 14.5L2.5 11.5V4.5L8 1.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M8 6v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="8" cy="11" r="0.5" fill="currentColor"/></svg>
+          </span>
+          Tfsec · Terraform Security Analysis
+        </h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="findings-panel__badge">{tfsec_count}</span>
+          <svg class="icon--sm findings-panel__chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="findings-panel__body">
+        <table class="findings-table" id="table-tfsec">
+          <thead>
+            <tr>
+              <th style="width:28%">File</th>
+              <th style="width:15%">Rule ID</th>
+              <th>Description</th>
+              <th style="width:10%">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tfsec_rows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== FINDINGS: GITLEAKS ======== -->
+    <div class="findings-panel" id="findings-gitleaks" aria-label="Gitleaks findings">
+      <div class="findings-panel__head">
+        <h3 class="findings-panel__title">
+          <span class="findings-panel__title-icon">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="7" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="10.5" r="1" fill="currentColor"/></svg>
+          </span>
+          Gitleaks · Hardcoded Secrets Detection
+        </h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="findings-panel__badge">{gitleaks_count}</span>
+          <svg class="icon--sm findings-panel__chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="findings-panel__body">
+        <table class="findings-table" id="table-gitleaks">
+          <thead>
+            <tr>
+              <th style="width:28%">File</th>
+              <th style="width:15%">Rule ID</th>
+              <th>Description</th>
+              <th style="width:10%">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gitleaks_rows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== FINDINGS: ANSIBLE-LINT ======== -->
+    <div class="findings-panel" id="findings-ansible-lint" aria-label="Ansible-Lint findings">
+      <div class="findings-panel__head">
+        <h3 class="findings-panel__title">
+          <span class="findings-panel__title-icon">
+            <svg class="icon--sm" viewBox="0 0 16 16" fill="none"><path d="M4 4h8M4 8h8M4 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </span>
+          Ansible-Lint · Playbook Best Practices
+        </h3>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="findings-panel__badge">{ansible_lint_count}</span>
+          <svg class="icon--sm findings-panel__chevron" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="findings-panel__body">
+        <table class="findings-table" id="table-ansible-lint">
+          <thead>
+            <tr>
+              <th style="width:28%">File</th>
+              <th style="width:15%">Rule ID</th>
+              <th>Description</th>
+              <th style="width:10%">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ansible_lint_rows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======== FOOTER ======== -->
+    <footer class="footer">
+      <span class="footer__left">Generated by Shift-Left Pipeline</span>
+      <span class="footer__right">{project_name} · {last_scan_timestamp}</span>
+    </footer>
+
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
