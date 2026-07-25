@@ -27,11 +27,11 @@ jobs:
       - name: run checkov scanner
         uses: bridgecrewio/checkov-action@master
         with:
-          directory: terraform/
+          directory: .
           framework: terraform
           output_format: cli,junit
           output_file_path: reports/
-          soft_fail: true
+          soft_fail: false
 
       - name: upload checkov report
         uses: actions/upload-artifact@v4
@@ -58,7 +58,7 @@ jobs:
 
       - name: run tfsec scanner
         run: |
-          tfsec terraform/ --format default
+          tfsec . --format default
 
   # ─────────────────────────────────────────────
   # JOB 3 — Gitleaks scans for secrets
