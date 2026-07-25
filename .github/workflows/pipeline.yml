@@ -32,10 +32,30 @@ jobs:
           framework: terraform
           output_format: cli,json,junit
           output_file_path: reports/
-          soft_fail: true        # true so report saves before we fail manually
+          soft_fail: true
+
+      - name: debug show report files
+        run: ls -la reports/
+        if: always()
 
       - name: fail if checkov found issues
-        run: python3 -c "import json, sys; data = json.load(open('reports/results_json.json')); failed = data['results']['failed_checks']; print(f'Checkov found {len(failed)} issues'); sys.exit(1 if len(failed) > 0 else 0)"
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          print('Files in reports:', os.listdir('reports'))
+          try:
+              data = json.load(open('reports/results_json.json'))
+              failed = data['results']['failed_checks']
+              print(f'Checkov found {len(failed)} issues')
+              if len(failed) > 0:
+                  sys.exit(1)
+          except Exception as e:
+              print(f'Error: {e}')
+              sys.exit(1)
+          PY
 
       - name: upload checkov report
         uses: actions/upload-artifact@v4
@@ -64,10 +84,10 @@ jobs:
           chmod +x tfsec
           sudo mv tfsec /usr/local/bin/tfsec
 
-      - name: run tfsec scanner — save JSON report
+      - name: run tfsec scanner save JSON report
         run: tfsec . --format json --out reports/tfsec-report.json || true
 
-      - name: run tfsec scanner — fail build on findings
+      - name: run tfsec scanner fail build on findings
         run: tfsec . --format default
 
       - name: upload tfsec report
@@ -99,10 +119,10 @@ jobs:
           tar -xzf gitleaks_8.24.3_linux_x64.tar.gz
           sudo mv gitleaks /usr/local/bin/
 
-      - name: run gitleaks scanner — save JSON report
+      - name: run gitleaks scanner save JSON report
         run: gitleaks detect --source . -v --report-format json --report-path reports/gitleaks-report.json || true
 
-      - name: run gitleaks scanner — fail build on findings
+      - name: run gitleaks scanner fail build on findings
         run: gitleaks detect --source . -v
 
       - name: upload gitleaks report
@@ -131,10 +151,10 @@ jobs:
           pip install ansible-lint
           pip install ansible
 
-      - name: run ansible-lint scanner — save JSON report
+      - name: run ansible-lint scanner save JSON report
         run: ansible-lint ansible/playbook.yml --format json -q > reports/ansible-lint-report.json || true
 
-      - name: run ansible-lint scanner — fail build on findings
+      - name: run ansible-lint scanner fail build on findings
         run: ansible-lint ansible/playbook.yml -v
 
       - name: upload ansible-lint report
