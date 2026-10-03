@@ -1,7 +1,4 @@
 
-# What this does: Creates a basic Azure setup for my DevSecOps project
-
-
 terraform {
   required_providers {
     azurerm = {
@@ -15,13 +12,13 @@ provider "azurerm" {
   features {}
 }
 
-# first thing i need is a resource group to put everything inside
+# resource group
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
 }
 
-# the virtual network for my project
+# virtual network
 resource "azurerm_virtual_network" "main" {
   name                = "devsecops-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -29,7 +26,7 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = azurerm_resource_group.main.name
 }
 
-# subnet inside the vnet
+# subnet
 resource "azurerm_subnet" "main" {
   name                 = "devsecops-subnet"
   resource_group_name  = azurerm_resource_group.main.name
@@ -37,8 +34,7 @@ resource "azurerm_subnet" "main" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
-# firewall rules for my vm
-# BAD PRACTICE: i opened port 22 to everyone, checkov will catch this
+
 resource "azurerm_network_security_group" "main" {
   name                = "devsecops-nsg"
   location            = var.location
@@ -52,26 +48,25 @@ resource "azurerm_network_security_group" "main" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    # this should be my ip only not 0.0.0.0/0
-    source_address_prefix      = "0.0.0.0/0"
+    # FIX: restricted to admin IP only, not open to internet
+    source_address_prefix      = var.admin_ip
     destination_address_prefix = "*"
   }
 
   security_rule {
-    name                       = "allow-http"
-    priority                   = 200
+    name                       = "deny-all-inbound"
+    priority                   = 1000
     direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
+    access                     = "Deny"
+    protocol                   = "*"
     source_port_range          = "*"
-    destination_port_range     = "80"
-    # same problem here, too open
-    source_address_prefix      = "0.0.0.0/0"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
 }
 
-# public ip so i can reach my vm
+# public ip
 resource "azurerm_public_ip" "main" {
   name                = "devsecops-pip"
   location            = var.location
@@ -79,7 +74,7 @@ resource "azurerm_public_ip" "main" {
   allocation_method   = "Static"
 }
 
-# network interface to connect vm to the network
+# network interface
 resource "azurerm_network_interface" "main" {
   name                = "devsecops-nic"
   location            = var.location
@@ -93,9 +88,19 @@ resource "azurerm_network_interface" "main" {
   }
 }
 
-# my ubuntu vm
-# BAD PRACTICE: hardcoded password, gitleaks will find this
-# BAD PRACTICE: no disk encryption, tfsec will catch this
+
+resource "azurerm_disk_encryption_set" "main" {
+  name                = "devsecops-des"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  key_vault_key_id    = var.key_vault_key_id
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+
 resource "azurerm_linux_virtual_machine" "main" {
   name                = "devsecops-vm"
   resource_group_name = azurerm_resource_group.main.name
@@ -103,10 +108,13 @@ resource "azurerm_linux_virtual_machine" "main" {
   size                = var.vm_size
   admin_username      = var.admin_username
 
-  # i know this is wrong, the password should come from vault
-  # but for now i put it here so gitleaks can detect it
-  admin_password                  = "SuperSecret123!"
-  disable_password_authentication = false
+  # FIX: password authentication disabled, SSH key used instead
+  disable_password_authentication = true
+
+  admin_ssh_key {
+    username   = var.admin_username
+    public_key = var.ssh_public_key
+  }
 
   network_interface_ids = [
     azurerm_network_interface.main.id
@@ -115,7 +123,8 @@ resource "azurerm_linux_virtual_machine" "main" {
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
-    # missing encryption here, tfsec will flag this
+    # FIX: disk encryption enabled
+    disk_encryption_set_id = azurerm_disk_encryption_set.main.id
   }
 
   source_image_reference {
@@ -126,8 +135,7 @@ resource "azurerm_linux_virtual_machine" "main" {
   }
 }
 
-# storage account for my project
-# BAD PRACTICE: http allowed and weak tls, checkov will catch both
+
 resource "azurerm_storage_account" "main" {
   name                     = "devsecopsstorage"
   resource_group_name      = azurerm_resource_group.main.name
@@ -135,9 +143,9 @@ resource "azurerm_storage_account" "main" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  # should be true but i left it false on purpose
-  https_traffic_only_enabled = false 
+ 
+  https_traffic_only_enabled = true
 
-  # tls 1.0 is outdated and insecure
-  min_tls_version = "TLS1_0"
+  
+  min_tls_version = "TLS1_2"
 }

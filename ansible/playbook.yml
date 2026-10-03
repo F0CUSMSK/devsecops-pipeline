@@ -1,74 +1,74 @@
-- name: deploy and configure web server
+- name: Deploy and configure web server
   hosts: webservers
   become: yes
-  become_method: sudo
+  become_method: ansible.builtin.sudo
 
   vars:
-    # BAD PRACTICE: hardcoded credentials in plaintext
-    # gitleaks and ansible-lint will catch these
-    db_password: "DatabasePass123!"
-    db_user: "admin"
-    api_key: "sk-1234567890abcdef"
-    secret_token: "my-super-secret-token"
+    
+    db_user: "{{ lookup('env', 'DB_USER') }}"
     app_port: 80
 
   tasks:
 
-    # first thing i do is update the server
-    - name: update apt cache
-      apt:
+  
+    - name: Update apt cache
+      ansible.builtin.apt:
         update_cache: yes
 
-    # install nginx web server
-    - name: install nginx
-      apt:
+    
+    - name: Install nginx
+      ansible.builtin.apt:
         name: nginx
         state: present
 
-    # install mysql database
-    - name: install mysql
-      apt:
+    
+    - name: Install mysql
+      ansible.builtin.apt:
         name: mysql-server
         state: present
 
-    # BAD PRACTICE: using command module instead of mysql_user module
-    # ansible-lint will catch this
-    - name: configure database user
-      command: mysql -u root -e "CREATE USER '{{ db_user }}'@'localhost' IDENTIFIED BY '{{ db_password }}';"
+    - name: Configure database user
+      community.mysql.mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ lookup('env', 'DB_PASSWORD') }}"
+        host: localhost
+        state: present
 
-    # BAD PRACTICE: file permissions set to 0777 which means everyone can read write execute
-    # ansible-lint will catch this
-    - name: create app config file
-      copy:
+
+    - name: Create app config file
+      ansible.builtin.copy:
         content: |
-          DB_PASSWORD={{ db_password }}
           DB_USER={{ db_user }}
-          API_KEY={{ api_key }}
-          SECRET={{ secret_token }}
           PORT={{ app_port }}
         dest: /etc/app/config.env
-        # this is very dangerous, every user on the system can read this file
-        mode: "0777"
+        
+        mode: "0640"
+        owner: root
+        group: root
 
-    # start nginx and make it run on boot
-    - name: start nginx service
-      service:
+    - name: Start nginx service
+      ansible.builtin.service:
         name: nginx
         state: started
         enabled: yes
 
-    # BAD PRACTICE: no version pinning for pip packages
-    # ansible-lint will catch this
-    - name: install python packages
-      pip:
-        name: flask
+    
+    - name: Install python packages
+      ansible.builtin.pip:
+        name: flask==3.0.0
 
-    # BAD PRACTICE: using shell module when a proper module exists
-    # ansible-lint will catch this
-    - name: create app directory
-      shell: mkdir -p /var/www/myapp && chmod 777 /var/www/myapp
+   
+    - name: Create app directory
+      ansible.builtin.file:
+        path: /var/www/myapp
+        state: directory
+        mode: "0750"
+        owner: root
+        group: www-data
 
-    # BAD PRACTICE: ignore errors which hides real problems
-    - name: check app status
-      command: systemctl status myapp
-      ignore_errors: yes
+    
+    - name: Check app status
+      ansible.builtin.command: systemctl status myapp
+      register: app_status
+      changed_when: false
+      failed_when: app_status.rc not in [0, 3]
