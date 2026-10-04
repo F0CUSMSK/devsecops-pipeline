@@ -18,10 +18,11 @@ variable "admin_username" {
   default     = "adminuser"
 }
 
-# FIX: admin IP to restrict SSH access — set this to your real IP
+# FIX: SSH is only reachable from inside the VNet (e.g. Azure Bastion),
+# so the allowed source must be a private CIDR — the VM has no public IP
 variable "admin_ip" {
-  description = "Your admin IP address to restrict SSH access"
-  default     = "197.0.0.0/24"
+  description = "Private CIDR allowed to reach the VM over SSH (Bastion / admin subnet)"
+  default     = "10.0.0.0/16"
 }
 
 # FIX: SSH public key instead of hardcoded password

@@ -100,17 +100,36 @@ def parse_gitleaks(data):
     }
 
 def parse_ansible(data):
+    empty = {"total": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "findings": []}
     if not data:
-        return {"total": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "findings": []}
-    items    = data if isinstance(data, list) else []
+        return empty
     findings = []
     severity_count = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
-    for i in items:
-        sev = "MEDIUM"
+    sev_map = {
+        "very-high": "HIGH", "high": "HIGH",
+        "medium": "MEDIUM", "low": "LOW",
+        "very-low": "LOW", "info": "LOW",
+    }
+    violations = []
+    if isinstance(data, dict):
+        # ansible-lint >= 6 JSON: {"rule-id": [{file, line, column, message, severity}, ...]}
+        for rule_id, items in data.items():
+            if not isinstance(items, list):
+                continue
+            for i in items:
+                violations.append((rule_id, i))
+    elif isinstance(data, list):
+        for i in data:
+            violations.append((i.get("rule", {}).get("id", ""), i))
+    for rule_id, i in violations:
+        sev = sev_map.get(str(i.get("severity", "medium")).lower(), "MEDIUM")
+        loc = i.get("file", "unknown")
+        if i.get("line"):
+            loc += f":{i['line']}"
         findings.append({
-            "file":     i.get("task", {}).get("name", "unknown"),
-            "rule":     i.get("rule", {}).get("id", ""),
-            "message":  i.get("rule", {}).get("description", ""),
+            "file":     loc,
+            "rule":     rule_id,
+            "message":  i.get("message", ""),
             "severity": sev
         })
         severity_count[sev] += 1

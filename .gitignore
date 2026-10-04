@@ -41,3 +41,8 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# ─── Local scanning tools ─────────────────────────────────────
+# scanner binaries + venv used to verify fixes locally
+.tools/
+.venv-scan/

@@ -1,0 +1,7 @@
+# Historical secrets — files were removed / secrets replaced by env lookups.
+# These commits are immutable history, so the findings are suppressed by fingerprint.
+# Any NEW secret will still be caught: only these exact commit:file:rule:line
+# combinations are ignored.
+e0874d143bfde467b20d736180e1e97149f6c64e:ansible/playbook.yml:generic-api-key:11
+515b51d96a3f98ad5b2f67314f6d62c33deb5923:terragoat/sql.tf:hashicorp-tf-password:15
+515b51d96a3f98ad5b2f67314f6d62c33deb5923:terragoat/sql.tf:hashicorp-tf-password:83

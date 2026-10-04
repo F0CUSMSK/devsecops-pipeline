@@ -1,7 +1,8 @@
 
-output "vm_public_ip" {
-  description = "the public ip address of my virtual machine"
-  value       = azurerm_public_ip.main.ip_address
+# FIX: VM has no public IP anymore — expose its private IP instead
+output "vm_private_ip" {
+  description = "the private ip address of my virtual machine"
+  value       = azurerm_network_interface.main.private_ip_address
 }
 
 
