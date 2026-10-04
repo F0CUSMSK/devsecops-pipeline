@@ -1,0 +1,12 @@
+# keep the build context small — the image ships no project code,
+# repositories are mounted at runtime
+.git
+.github
+.venv-scan
+.tools
+.zcodeignore
+reports
+*.pdf
+*.tex
+*.zip
+*.exe
